@@ -2,28 +2,26 @@ package org.morozov.market.entity;
 
 import javax.persistence.Column;
 import javax.persistence.Id;
+import javax.persistence.MappedSuperclass;
 import java.io.Serializable;
 import java.util.UUID;
 
 /**
  * Created by Morozov on 5/17/2017.
  */
+@MappedSuperclass
 public abstract class BaseEntity implements Serializable {
 
     @Id
     @Column(name = "id", nullable = false, unique = true)
-    private UUID id;
+    private String id;
 
     public BaseEntity() {
-        this.id = UUID.randomUUID();
+        this.id = UUID.randomUUID().toString();
     }
 
-    public UUID getId() {
+    public String getId() {
         return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
     }
 
     @Override

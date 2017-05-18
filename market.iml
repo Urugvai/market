@@ -1,6 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module org.jetbrains.idea.maven.project.MavenProjectsManager.isMavenModule="true" type="JAVA_MODULE" version="4">
-  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_5">
+  <component name="FacetManager">
+    <facet type="kotlin-language" name="Kotlin">
+      <configuration version="1">
+        <option name="compilerInfo">
+          <KotlinCompilerInfo>
+            <option name="compilerSettings">
+              <CompilerSettings />
+            </option>
+            <option name="k2jsCompilerArguments">
+              <K2JSCompilerArguments>
+                <option name="moduleKind" value="plain" />
+              </K2JSCompilerArguments>
+            </option>
+            <option name="k2jvmCompilerArguments">
+              <K2JVMCompilerArguments>
+                <option name="jvmTarget" value="1.6" />
+              </K2JVMCompilerArguments>
+            </option>
+            <option name="_commonCompilerArguments">
+              <DummyImpl>
+                <option name="pluginClasspaths">
+                  <array />
+                </option>
+                <option name="coroutinesWarn" value="true" />
+                <option name="pluginOptions">
+                  <array />
+                </option>
+              </DummyImpl>
+            </option>
+          </KotlinCompilerInfo>
+        </option>
+        <option name="useProjectSettings" value="false" />
+        <option name="versionInfo">
+          <KotlinVersionInfo>
+            <option name="apiLevel" value="1.1" />
+            <option name="languageLevel" value="1.1" />
+            <option name="targetPlatformName" value="JVM 1.6" />
+          </KotlinVersionInfo>
+        </option>
+      </configuration>
+    </facet>
+  </component>
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_8">
     <output url="file://$MODULE_DIR$/target/classes" />
     <output-test url="file://$MODULE_DIR$/target/test-classes" />
     <content url="file://$MODULE_DIR$">
@@ -19,5 +61,12 @@
     <orderEntry type="library" name="Maven: org.eclipse.persistence:eclipselink:2.5.1" level="project" />
     <orderEntry type="library" name="Maven: org.eclipse.persistence:commonj.sdo:2.1.1" level="project" />
     <orderEntry type="library" name="Maven: org.eclipse.persistence:javax.persistence:2.0.0" level="project" />
+    <orderEntry type="library" name="Maven: org.testng:testng:6.8.8" level="project" />
+    <orderEntry type="library" name="Maven: org.beanshell:bsh:2.0b4" level="project" />
+    <orderEntry type="library" name="Maven: com.beust:jcommander:1.27" level="project" />
+    <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-stdlib-jre8:1.1.2-4" level="project" />
+    <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-stdlib-jre7:1.1.2-4" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.jetbrains.kotlin:kotlin-test:1.1.2-4" level="project" />
+    <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-stdlib:1.1.2-4" level="project" />
   </component>
 </module>

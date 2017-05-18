@@ -1,12 +1,14 @@
 package org.morozov.market.entity;
 
 import javax.persistence.Column;
+import javax.persistence.Entity;
 import javax.persistence.Table;
 import java.math.BigDecimal;
 
 /**
  * Created by Morozov on 5/17/2017.
  */
+@Entity(name = "market$Item")
 @Table(name = "market_item")
 public class Item extends BaseEntity {
 

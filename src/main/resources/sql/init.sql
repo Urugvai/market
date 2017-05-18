@@ -1,5 +1,3 @@
-
-
 CREATE TABLE market_user (
     id VARCHAR(36) not null,
     login VARCHAR(128) not null,

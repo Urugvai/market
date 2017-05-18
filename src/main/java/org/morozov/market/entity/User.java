@@ -8,13 +8,14 @@ import java.util.List;
 /**
  * Created by Morozov on 5/17/2017.
  */
-@Entity
+@Entity(name = "market$User")
 @Table(name = "market_user")
 public class User extends BaseEntity {
 
     @Column(name = "login", nullable = false)
     private String login;
 
+    @Temporal(TemporalType.DATE)
     @Column(name = "login_date", nullable = false)
     private Date loginDate;
 
