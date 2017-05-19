@@ -1,9 +1,8 @@
 package org.morozov.market.entity;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * Created by Morozov on 5/17/2017.
@@ -20,6 +19,9 @@ public class Item extends BaseEntity {
 
     @Column(name = "price", nullable = false)
     private BigDecimal price;
+
+    @ManyToMany(mappedBy = "items", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<User> users;
 
     public String getName() {
         return name;
@@ -43,5 +45,13 @@ public class Item extends BaseEntity {
 
     public void setPrice(BigDecimal price) {
         this.price = price;
+    }
+
+    public List<User> getUsers() {
+        return users;
+    }
+
+    public void setUsers(List<User> users) {
+        this.users = users;
     }
 }

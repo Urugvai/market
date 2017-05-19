@@ -15,7 +15,7 @@ public class User extends BaseEntity {
     @Column(name = "login", nullable = false)
     private String login;
 
-    @Temporal(TemporalType.DATE)
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "login_date", nullable = false)
     private Date loginDate;
 
