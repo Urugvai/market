@@ -2,7 +2,6 @@ package org.morozov.market.entity;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -14,10 +13,6 @@ public class User extends BaseEntity {
 
     @Column(name = "login", nullable = false)
     private String login;
-
-    @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "login_date", nullable = false)
-    private Date loginDate;
 
     @Column(name = "account")
     private BigDecimal account;
@@ -37,14 +32,6 @@ public class User extends BaseEntity {
 
     public void setLogin(String login) {
         this.login = login;
-    }
-
-    public Date getLoginDate() {
-        return loginDate;
-    }
-
-    public void setLoginDate(Date loginDate) {
-        this.loginDate = loginDate;
     }
 
     public BigDecimal getAccount() {

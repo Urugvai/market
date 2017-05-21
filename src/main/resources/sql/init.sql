@@ -1,8 +1,7 @@
 CREATE TABLE market_user (
     id VARCHAR(36) not null,
     login VARCHAR(128) not null,
-    login_date TIMESTAMP not null,
-    account  NUMERIC,
+    account NUMERIC,
 
     PRIMARY KEY(id)
 );
