@@ -1,5 +1,9 @@
 package org.morozov.market.util;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.morozov.market.entity.BaseEntity;
+
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
@@ -13,11 +17,12 @@ public class PersistenceProvider {
     private static final String PERSISTENCE_UNIT_NAME = "market";
     private static EntityManagerFactory factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
 
+    @NotNull
     public static EntityManager getEntityManager() {
         return factory.createEntityManager();
     }
 
-    public static void makeInTransaction(TransactionWrapper wrapper) {
+    public static void makeInTransaction(@NotNull TransactionWrapper wrapper) {
         EntityManager em = factory.createEntityManager();
         try {
             EntityTransaction transaction = em.getTransaction();
@@ -27,5 +32,20 @@ public class PersistenceProvider {
         } finally {
             em.close();
         }
+    }
+
+    @Nullable
+    public static <T extends BaseEntity> T makeInTransactionAndReturn(@NotNull CallableTransactionWrapper<T> wrapper) {
+        T entity;
+        EntityManager em = factory.createEntityManager();
+        try {
+            EntityTransaction transaction = em.getTransaction();
+            transaction.begin();
+            entity = wrapper.call(em);
+            transaction.commit();
+        } finally {
+            em.close();
+        }
+        return entity;
     }
 }

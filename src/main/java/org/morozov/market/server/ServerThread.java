@@ -22,7 +22,7 @@ public class ServerThread extends Thread {
     }
 
     public void run() {
-        try {
+        try (final ServerSocket serverSocket = this.serverSocket) {
             while (!Thread.currentThread().isInterrupted()) {
                 Socket client = serverSocket.accept();
                 Server.getThreadPool().submit(new ClientThread(client));
