@@ -5,19 +5,21 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.morozov.market.entity.Item;
+import org.morozov.market.entity.not_persistence.ItemHolder;
 import org.morozov.market.util.PersistenceProvider;
 
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.net.ServerSocket;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class Server {
 
@@ -28,7 +30,7 @@ public class Server {
     private static final String PATH_ITEMS_FILE = "src/main/resources/items.xml";
 
     private static final ExecutorService threadPool = Executors.newCachedThreadPool();
-    private final static Set<String> userSessions = new HashSet<>();
+    private final static ConcurrentSkipListSet<String> userSessions = new ConcurrentSkipListSet<>();
 
     public static void main(String[] args) {
         try {
@@ -36,7 +38,6 @@ public class Server {
             logger.info("Start server...");
 
             updateItems();
-            logger.info("Items was updated...");
 
             threadPool.submit(new ServerThread(socketListener));
 
@@ -48,18 +49,31 @@ public class Server {
             }
 
             threadPool.shutdownNow();
+
+            threadPool.awaitTermination(2000, TimeUnit.MILLISECONDS);
             logger.info("Stop server...");
         } catch (IOException e) {
             logger.error("I/O exception", e);
             e.printStackTrace();
+        } catch (InterruptedException e) {
+            logger.error("Thread pool is shut down!", e);
         }
     }
 
     @SuppressWarnings("unchecked")
     private static void updateItems() {
-        try (final ObjectInputStream outputStream = new ObjectInputStream(new FileInputStream(new File(PATH_ITEMS_FILE)))) {
+        try (final BufferedReader inputStream = new BufferedReader(new FileReader(new File(PATH_ITEMS_FILE)))) {
+            StringBuilder str = new StringBuilder();
+            String line = inputStream.readLine();
+            while (line != null) {
+                str.append(line);
+                line = inputStream.readLine();
+            }
             final XStream xStream = new XStream();
-            List<Item> itemList = (List<Item>) xStream.fromXML((String) outputStream.readObject());
+            xStream.alias("item", Item.class);
+            xStream.alias("items", ItemHolder.class);
+            xStream.addImplicitCollection(ItemHolder.class, "itemList");
+            List<Item> itemList = ((ItemHolder) xStream.fromXML(str.toString())).itemList;
             PersistenceProvider.makeInTransaction((entityManager) -> {
                 List<Item> forDeletingItems =
                         entityManager.createQuery("select i from market$Item i", Item.class).getResultList();
@@ -79,6 +93,7 @@ public class Server {
                     entityManager.remove(deletingItem);
                 });
             });
+            logger.info("Items was updated...");
         } catch (Throwable e) {
             logger.error("Some troubles with items updating, updating is skipped...", e);
         }

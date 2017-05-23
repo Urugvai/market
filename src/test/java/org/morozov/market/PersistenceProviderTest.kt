@@ -7,7 +7,6 @@ import org.testng.annotations.AfterClass
 import org.testng.annotations.BeforeClass
 import org.testng.annotations.Test
 import java.math.BigDecimal
-import java.util.*
 import javax.persistence.EntityManager
 import javax.persistence.Persistence
 import kotlin.test.assertEquals
@@ -54,7 +53,6 @@ class PersistenceProviderTest {
         val items = listOf(item, item2)
         val user = User()
         user.login = "testUser"
-        user.loginDate = Date(System.currentTimeMillis())
         user.account = BigDecimal(44)
         user.items = items
         em?.persist(user)

@@ -8,6 +8,6 @@ import org.jetbrains.annotations.Nullable;
 public class StringUtils {
 
     public static boolean isBlank(@Nullable final String string) {
-        return string != null && !"".equals(string);
+        return string == null || "".equals(string);
     }
 }

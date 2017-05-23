@@ -2,7 +2,6 @@ package org.morozov.market.util;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.morozov.market.entity.BaseEntity;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -35,7 +34,7 @@ public class PersistenceProvider {
     }
 
     @Nullable
-    public static <T extends BaseEntity> T makeInTransactionAndReturn(@NotNull CallableTransactionWrapper<T> wrapper) {
+    public static <T> T makeInTransactionAndReturn(@NotNull CallableTransactionWrapper<T> wrapper) {
         T entity;
         EntityManager em = factory.createEntityManager();
         try {
