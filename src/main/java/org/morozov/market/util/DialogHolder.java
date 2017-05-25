@@ -11,11 +11,15 @@ public interface DialogHolder {
 
     String UNKNOWN_COMMAND = "Unknown command, please try again!\n\r";
 
-    String COMMAND_LIST = "Available commands:\n\r'logout'\n\r'viewshop'\n\r''myinfo'\n\r'buy %item name%'\n\r'sell %item name%'\n\r";
+    String COMMAND_LIST = "Available commands:\n\r'logout'\n\r'viewshop'\n\r'myinfo'\n\r'buy %item name%'\n\r'sell %item name%'\n\r";
 
     String ITEM_ARE_NOT_FOUND = "Imputed item aren't found in the shop!\n\r";
 
     String NOT_ENOUGH_FUNDS = "Not enough funds for buying!\n\r";
 
     String SUCCESSFUL_OPERATION = "Successful operation!\n\r";
+
+    String USER_WAS_DELETED = "User was deleted!\n\r";
+
+    String ITEM_WAS_DELETED = "Item was deleted!\n\r";
 }

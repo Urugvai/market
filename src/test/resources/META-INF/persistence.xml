@@ -4,6 +4,7 @@
     <persistence-unit name="test" transaction-type="RESOURCE_LOCAL">
         <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
         <class>org.morozov.market.entity.Item</class>
+        <class>org.morozov.market.entity.ItemType</class>
         <class>org.morozov.market.entity.User</class>
         <properties>
             <property name="javax.persistence.jdbc.driver" value="com.mysql.jdbc.Driver"/>

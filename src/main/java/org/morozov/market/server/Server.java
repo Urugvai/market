@@ -4,7 +4,7 @@ import com.thoughtworks.xstream.XStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.morozov.market.entity.Item;
+import org.morozov.market.entity.ItemType;
 import org.morozov.market.entity.not_persistence.ItemHolder;
 import org.morozov.market.util.PersistenceProvider;
 
@@ -70,13 +70,13 @@ public class Server {
                 line = inputStream.readLine();
             }
             final XStream xStream = new XStream();
-            xStream.alias("item", Item.class);
+            xStream.alias("item", ItemType.class);
             xStream.alias("items", ItemHolder.class);
             xStream.addImplicitCollection(ItemHolder.class, "itemList");
-            List<Item> itemList = ((ItemHolder) xStream.fromXML(str.toString())).itemList;
+            List<ItemType> itemList = ((ItemHolder) xStream.fromXML(str.toString())).itemList;
             PersistenceProvider.makeInTransaction((entityManager) -> {
-                List<Item> forDeletingItems =
-                        entityManager.createQuery("select i from market$Item i", Item.class).getResultList();
+                List<ItemType> forDeletingItems =
+                        entityManager.createQuery("select i from market$ItemType i", ItemType.class).getResultList();
                 itemList.forEach(item -> {
                     if (forDeletingItems.contains(item)) {
                         entityManager.merge(item);
@@ -85,13 +85,13 @@ public class Server {
                     }
                 });
                 forDeletingItems.removeAll(itemList);
-                forDeletingItems.forEach(deletingItem -> {
-                    deletingItem.getUsers().forEach(user -> {
-                        user.setAccount(user.getAccount().add(deletingItem.getPrice()));
-                        entityManager.merge(user);
-                    });
-                    entityManager.remove(deletingItem);
-                });
+//                forDeletingItems.forEach(deletingItem -> {
+//                    deletingItem.getUsers().forEach(user -> {
+//                        user.setAccount(user.getAccount().add(deletingItem.getPrice()));
+//                        entityManager.merge(user);
+//                    });
+//                    entityManager.remove(deletingItem);
+//                });
             });
             logger.info("Items was updated...");
         } catch (Throwable e) {

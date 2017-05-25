@@ -2,11 +2,13 @@ package org.morozov.market
 
 import org.apache.logging.log4j.LogManager
 import org.morozov.market.entity.Item
+import org.morozov.market.entity.ItemType
 import org.morozov.market.entity.User
 import org.testng.annotations.AfterClass
 import org.testng.annotations.BeforeClass
 import org.testng.annotations.Test
 import java.math.BigDecimal
+import java.util.*
 import javax.persistence.EntityManager
 import javax.persistence.Persistence
 import kotlin.test.assertEquals
@@ -31,8 +33,8 @@ class PersistenceProviderTest {
     @AfterClass
     fun clear() {
         em?.transaction?.begin()
-        em?.createNativeQuery("DELETE FROM market_user_item")?.executeUpdate()
         em?.createNativeQuery("DELETE FROM market_item")?.executeUpdate()
+        em?.createNativeQuery("DELETE FROM market_item_type")?.executeUpdate()
         em?.createNativeQuery("DELETE FROM market_user")?.executeUpdate()
         em?.transaction?.commit()
         em!!.close()
@@ -42,41 +44,64 @@ class PersistenceProviderTest {
     fun crudEntityTest() {
         logger.info("Persist new entities")
         em?.transaction?.begin()
+        val itemType = ItemType()
+        itemType.name = "test"
+        itemType.price = BigDecimal(10)
+        em?.persist(itemType)
+        val itemType2 = ItemType()
+        itemType2.name = "test2"
+        itemType2.price = BigDecimal.valueOf(20)
+        em?.persist(itemType2)
         val item = Item()
-        item.name = "test"
-        item.price = BigDecimal(10)
-        em?.persist(item)
+        item.itemType = itemType
         val item2 = Item()
-        item2.name = "test2"
-        item2.price = BigDecimal.valueOf(20)
+        item2.itemType = itemType2
+        val items = ArrayList<Item>()
+        items.add(item)
+        items.add(item2)
         em?.persist(item2)
-        val items = listOf(item, item2)
         val user = User()
         user.login = "testUser"
         user.account = BigDecimal(44)
         user.items = items
+        item.user = user
+        item2.user = user
         em?.persist(user)
         em?.transaction?.commit()
-
         logger.info("Reload new entities")
+        val reloadedItemTypes = em?.createQuery("select i from market\$ItemType i", ItemType::class.java)?.resultList
+
+        assertNotNull(reloadedItemTypes)
+        assertEquals(2, reloadedItemTypes?.size)
+
         val reloadedItems = em?.createQuery("select i from market\$Item i", Item::class.java)?.resultList
 
         assertNotNull(reloadedItems)
         assertEquals(2, reloadedItems?.size)
 
-        val reloadedUser = em?.createQuery("select u from market\$User u", User::class.java)?.resultList
-        assertNotNull(reloadedUser)
-        assertEquals(1, reloadedUser?.size)
-        assertEquals("testUser", reloadedUser?.get(0)?.login)
+        val reloadedUsers =
+                em?.createQuery("select u from market\$User u", User::class.java)?.resultList
+        assertNotNull(reloadedUsers)
+        assertEquals(1, reloadedUsers?.size)
+        assertEquals("testUser", reloadedUsers?.get(0)?.login)
+        assertEquals(2, reloadedUsers?.get(0)?.items?.size)
 
         logger.info("Remove item entity")
         em?.transaction?.begin()
         em?.remove(item)
-        em?.flush()
+        em?.remove(item2)
+        em?.remove(itemType)
         em?.transaction?.commit()
 
-        val surviveItems = em?.createQuery("select i from market\$Item i", Item::class.java)?.resultList
+        val surviveItems = em?.createQuery("select i from market\$ItemType i", ItemType::class.java)?.resultList
         assertEquals(1, surviveItems?.size)
-        assertTrue { item2.id == surviveItems?.get(0)?.id }
+        assertTrue { itemType2.id == surviveItems?.get(0)?.id }
+
+        em?.transaction?.begin()
+        em?.refresh(user)
+        em?.transaction?.commit()
+        assertNotNull(user)
+        assertEquals("testUser", user.login)
+        assertEquals(0, user.items?.size)
     }
 }

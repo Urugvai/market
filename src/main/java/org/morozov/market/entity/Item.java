@@ -1,57 +1,37 @@
 package org.morozov.market.entity;
 
-import javax.persistence.*;
-import java.math.BigDecimal;
-import java.util.List;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
 
 /**
- * Created by Morozov on 5/17/2017.
+ * Created by Morozov on 5/25/2017.
  */
 @Entity(name = "market$Item")
 @Table(name = "market_item")
 public class Item extends BaseEntity {
 
-    @Column(name = "name", nullable = false)
-    private String name;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "user_id")
+    private User user;
 
-    @Column(name = "description")
-    private String description;
+    @JoinColumn(name = "item_type_id")
+    private ItemType itemType;
 
-    @Column(name = "price", nullable = false)
-    private BigDecimal price;
-
-    @ManyToMany(mappedBy = "items", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<User> users;
-
-    public String getName() {
-        return name;
+    public User getUser() {
+        return user;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setUser(User user) {
+        this.user = user;
     }
 
-    public String getDescription() {
-        return description;
+    public ItemType getItemType() {
+        return itemType;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public void setPrice(BigDecimal price) {
-        this.price = price;
-    }
-
-    public List<User> getUsers() {
-        return users;
-    }
-
-    public void setUsers(List<User> users) {
-        this.users = users;
+    public void setItemType(ItemType itemType) {
+        this.itemType = itemType;
     }
 }

@@ -17,13 +17,7 @@ public class User extends BaseEntity {
     @Column(name = "account")
     private BigDecimal account;
 
-    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JoinTable(name = "market_user_item",
-            joinColumns =
-            @JoinColumn(name = "user_id", referencedColumnName = "id"),
-            inverseJoinColumns =
-            @JoinColumn(name = "item_id", referencedColumnName = "id")
-    )
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<Item> items;
 
     public String getLogin() {
