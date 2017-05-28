@@ -1,8 +1,9 @@
 package org.morozov.market.entity;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import java.math.BigDecimal;
-import java.util.List;
 
 /**
  * Created by Morozov on 5/17/2017.
@@ -17,11 +18,11 @@ public class ItemType extends BaseEntity {
     @Column(name = "description")
     private String description;
 
+    @Column(name = "removed_from_selling")
+    private Boolean removedFromSelling;
+
     @Column(name = "price", nullable = false)
     private BigDecimal price;
-
-    @OneToMany(mappedBy = "itemType", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<Item> items;
 
     public String getName() {
         return name;
@@ -47,11 +48,11 @@ public class ItemType extends BaseEntity {
         this.price = price;
     }
 
-    public List<Item> getItems() {
-        return items;
+    public Boolean getRemovedFromSelling() {
+        return removedFromSelling;
     }
 
-    public void setItems(List<Item> items) {
-        this.items = items;
+    public void setRemovedFromSelling(Boolean removedFromSelling) {
+        this.removedFromSelling = removedFromSelling;
     }
 }

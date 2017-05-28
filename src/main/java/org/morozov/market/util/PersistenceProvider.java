@@ -12,9 +12,11 @@ import javax.persistence.Persistence;
  * Created by Morozov on 5/18/2017.
  */
 public class PersistenceProvider {
+    private static EntityManagerFactory factory;
 
-    private static final String PERSISTENCE_UNIT_NAME = "market";
-    private static EntityManagerFactory factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
+    public static void init(String unitName) {
+        factory = Persistence.createEntityManagerFactory(unitName);
+    }
 
     @NotNull
     public static EntityManager getEntityManager() {

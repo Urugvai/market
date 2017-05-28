@@ -1,9 +1,6 @@
 package org.morozov.market.entity;
 
-import javax.persistence.Entity;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 /**
  * Created by Morozov on 5/25/2017.
@@ -12,10 +9,11 @@ import javax.persistence.Table;
 @Table(name = "market_item")
 public class Item extends BaseEntity {
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "item_type_id")
     private ItemType itemType;
 

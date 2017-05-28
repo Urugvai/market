@@ -4,8 +4,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.morozov.market.entity.Item;
 import org.morozov.market.entity.ItemType;
 import org.morozov.market.entity.User;
+import org.morozov.market.server.worker.ServerWorker;
 import org.morozov.market.util.CommandHolder;
 import org.morozov.market.util.DialogHolder;
 import org.morozov.market.util.PersistenceProvider;
@@ -15,9 +17,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.math.BigDecimal;
 import java.net.Socket;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -26,8 +26,6 @@ import java.util.List;
 public class ClientThread extends Thread {
 
     private static final Logger logger = LogManager.getLogger(ClientThread.class);
-
-    private static final int INIT_ACCOUNT = 100;
 
     private final Socket socket;
 
@@ -42,33 +40,31 @@ public class ClientThread extends Thread {
              final BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
              final PrintWriter writer = new PrintWriter(socket.getOutputStream())) {
             while (!Thread.currentThread().isInterrupted()) {
-                writer.write(DialogHolder.WELCOME_SPEECH);
-                writer.flush();
+                print(writer, DialogHolder.WELCOME_SPEECH);
 
                 String login = "";
                 do {
                     String command = reader.readLine();
 
-                    String[] imputedCommand = command.split(" ");
+                    String loginCommand = command.substring(command.indexOf("l"), command.length());
+                    String[] imputedCommand = loginCommand.split(" ");
 
                     if (imputedCommand.length != 2
                             || !CommandHolder.LOGIN.equals(imputedCommand[0].toUpperCase())) {
-                        writer.write(DialogHolder.UNKNOWN_COMMAND);
-                        writer.flush();
+                        print(writer, DialogHolder.UNKNOWN_COMMAND);
                         continue;
                     }
 
                     login = imputedCommand[1];
 
-                    if (!checkLoginCommand(login)) {
-                        writer.write(DialogHolder.INCORRECT_LOGIN);
-                        writer.flush();
+                    if (!validLogin(login)) {
+                        print(writer, DialogHolder.INCORRECT_LOGIN);
                     } else {
                         break;
                     }
                 } while (!Thread.currentThread().isInterrupted());
 
-                User user = loadOrCreateUser(login);
+                User user = ServerWorker.loadOrCreateUser(login);
 
                 if (user == null) {
                     logger.warn("Can't connect user '%s'. Session is closed.", login);
@@ -76,8 +72,7 @@ public class ClientThread extends Thread {
                 }
 
                 lastLogin = user.getLogin();
-                writer.write(DialogHolder.COMMAND_LIST);
-                writer.flush();
+                print(writer, DialogHolder.COMMAND_LIST);
 
                 boolean logout = false;
 
@@ -87,8 +82,7 @@ public class ClientThread extends Thread {
                     String[] imputedCommand = command.split(" ");
 
                     if (imputedCommand.length < 1 && imputedCommand.length > 2) {
-                        writer.write(DialogHolder.UNKNOWN_COMMAND);
-                        writer.flush();
+                        print(writer, DialogHolder.UNKNOWN_COMMAND);
                         continue;
                     }
 
@@ -99,105 +93,93 @@ public class ClientThread extends Thread {
                             break;
                         case CommandHolder.VIEWSHOP:
                             StringBuilder list = new StringBuilder();
-
-                            loadItems().forEach(item ->
+                            ServerWorker.loadItems().forEach(item ->
                                     list.append(item.getName()).append(" ").append(item.getPrice()).append("\n\r")
                             );
-
-                            writer.write(list.toString());
-                            writer.flush();
+                            print(writer, list.toString());
                             break;
                         case CommandHolder.MYINFO:
-                            User loadedUser = loadUser(user.getId());
+                            User loadedUser = ServerWorker.loadUser(user.getId());
                             if (loadedUser == null) {
-                                writer.write(DialogHolder.USER_WAS_DELETED);
-                                writer.flush();
+                                print(writer, DialogHolder.USER_WAS_DELETED);
                                 break;
                             }
                             final StringBuilder info = new StringBuilder();
                             info.append(loadedUser.getLogin()).append(" ").append(loadedUser.getAccount()).append("\n\r");
-                            info.append("ItemType list:\n\r");
-//                            for (ItemType userItem : loadedUser.getItems()) {
-//                                info.append(userItem.getName()).append("\n\r");
-//                            }
-                            writer.write(info.toString());
-                            writer.flush();
-                            break;
-                        case CommandHolder.BUY:
-                            ItemType itemForBuying = null;
-                            for (ItemType item : loadItems()) {
-                                if (item.getName().toUpperCase().equals(imputedCommand[1].toUpperCase())) {
-                                    itemForBuying = item;
-                                    break;
+                            if (!loadedUser.getItems().isEmpty()) {
+                                info.append("Item list:\n\r");
+                                for (Item userItem : loadedUser.getItems()) {
+                                    info.append(userItem.getItemType().getName()).append("\n\r");
                                 }
                             }
-                            if (itemForBuying == null) {
-                                writer.write(DialogHolder.ITEM_ARE_NOT_FOUND);
-                                writer.flush();
-                                break;
-                            }
+                            print(writer, info.toString());
+                            break;
+                        case CommandHolder.BUY:
+                            PersistenceProvider.makeInTransaction(em -> {
+                                ItemType itemTypeForBuying = null;
+                                List<ItemType> typedItems = em.createQuery(
+                                        "select i from market$ItemType i where i.removedFromSelling = false",
+                                        ItemType.class
+                                ).getResultList();
+                                for (ItemType itemType : typedItems) {
+                                    if (itemType.getName().toUpperCase().equals(imputedCommand[1].toUpperCase())) {
+                                        itemTypeForBuying = itemType;
+                                        break;
+                                    }
+                                }
+                                if (itemTypeForBuying == null) {
+                                    print(writer, DialogHolder.ITEM_ARE_NOT_FOUND);
+                                    return;
+                                }
 
-                            User loadedForBuyingUser = loadUser(user.getId());
-                            if (loadedForBuyingUser == null) {
-                                writer.write(DialogHolder.USER_WAS_DELETED);
-                                writer.flush();
-                                break;
-                            }
 
-                            if (loadedForBuyingUser.getAccount().compareTo(itemForBuying.getPrice()) < 0) {
-                                writer.write(DialogHolder.NOT_ENOUGH_FUNDS);
-                                writer.flush();
-                                break;
-                            }
-                            loadedForBuyingUser.setAccount(loadedForBuyingUser.getAccount().subtract(itemForBuying.getPrice()));
-//                            loadedForBuyingUser.getItems().add(itemForBuying);
-                            PersistenceProvider.makeInTransaction(em -> em.merge(loadedForBuyingUser));
-                            writer.write(DialogHolder.SUCCESSFUL_OPERATION);
-                            writer.flush();
+                                User loadedForBuyingUser = ServerWorker.loadUserInTransaction(user.getId(), writer, em);
+                                if (loadedForBuyingUser == null) {
+                                    return;
+                                }
+
+                                if (loadedForBuyingUser.getAccount().compareTo(itemTypeForBuying.getPrice()) < 0) {
+                                    print(writer, DialogHolder.NOT_ENOUGH_FUNDS);
+                                    return;
+                                }
+                                loadedForBuyingUser.setAccount(
+                                        loadedForBuyingUser.getAccount().subtract(itemTypeForBuying.getPrice())
+                                );
+                                Item boughtItem = new Item();
+                                boughtItem.setUser(loadedForBuyingUser);
+                                boughtItem.setItemType(itemTypeForBuying);
+                                loadedForBuyingUser.getItems().add(boughtItem);
+                                print(writer, DialogHolder.SUCCESSFUL_OPERATION);
+                            });
                             break;
                         case CommandHolder.SELL:
                             PersistenceProvider.makeInTransaction(em -> {
-                                List<User> reloadedUsers = em.createQuery(
-                                        "select u from market$User u join fetch u.items i where u.id = :userId", User.class)
-                                        .setParameter("userId", user.getId())
-                                        .setMaxResults(1)
-                                        .getResultList();
-                                if (reloadedUsers == null || reloadedUsers.isEmpty()) {
-                                    writer.write(DialogHolder.USER_WAS_DELETED);
-                                    writer.flush();
+                                User reloadedUser = ServerWorker.loadUserInTransaction(user.getId(), writer, em);
+                                if (reloadedUser == null) {
                                     return;
                                 }
-                                User reloadedUser = reloadedUsers.get(0);
-                                ItemType itemForSelling = null;
-//                                for (ItemType item : reloadedUser.getItems()) {
-//                                    if (item.getName().toUpperCase().equals(imputedCommand[1].toUpperCase())) {
-//                                        itemForSelling = item;
-//                                        break;
-//                                    }
-//                                }
+                                Item itemForSelling = null;
+                                for (Item item : reloadedUser.getItems()) {
+                                    if (item.getItemType().getName().toUpperCase().equals(imputedCommand[1].toUpperCase())) {
+                                        itemForSelling = item;
+                                        break;
+                                    }
+                                }
                                 if (itemForSelling == null) {
-                                    writer.write(DialogHolder.ITEM_ARE_NOT_FOUND);
-                                    writer.flush();
+                                    print(writer, DialogHolder.ITEM_ARE_NOT_FOUND);
                                     return;
                                 }
-                                itemForSelling = loadItem(itemForSelling.getId());
-                                if (itemForSelling == null) {
-                                    writer.write(DialogHolder.ITEM_WAS_DELETED);
-                                    writer.flush();
-                                    return;
-                                }
-                                reloadedUser.setAccount(reloadedUser.getAccount().add(itemForSelling.getPrice()));
-//                                reloadedUser.getItems().remove(itemForSelling);
-//                                itemForSelling.getUsers().remove(reloadedUser);
-                                em.merge(itemForSelling);
-                                em.merge(reloadedUser);
+                                reloadedUser.setAccount(
+                                        reloadedUser.getAccount().add(itemForSelling.getItemType().getPrice())
+                                );
+                                reloadedUser.getItems().remove(itemForSelling);
+                                em.remove(itemForSelling);
+                                print(writer, DialogHolder.SUCCESSFUL_OPERATION);
                             });
-                            writer.write(DialogHolder.SUCCESSFUL_OPERATION);
-                            writer.flush();
                             break;
                         default:
-                            writer.write(DialogHolder.UNKNOWN_COMMAND);
-                            writer.flush();
+                            print(writer, DialogHolder.UNKNOWN_COMMAND);
+                            print(writer, DialogHolder.COMMAND_LIST);
                             break;
                     }
                 }
@@ -210,7 +192,7 @@ public class ClientThread extends Thread {
         }
     }
 
-    private boolean checkLoginCommand(final @Nullable String login) {
+    private boolean validLogin(final @Nullable String login) {
         return !StringUtils.isBlank(login) && isPossibleToOpenSession(login);
     }
 
@@ -223,57 +205,8 @@ public class ClientThread extends Thread {
         }
     }
 
-    @Nullable
-    private User loadOrCreateUser(@NotNull final String login) {
-        return PersistenceProvider.makeInTransactionAndReturn((em) -> {
-            List<User> users =
-                    em.createQuery("select u from market$User u where u.login = :login", User.class)
-                            .setParameter("login", login)
-                            .getResultList();
-            if (users.isEmpty()) {
-                User user = new User();
-                user.setLogin(login);
-                user.setAccount(BigDecimal.valueOf(INIT_ACCOUNT));
-                em.persist(user);
-                return user;
-            }
-            return users.get(0);
-        });
-    }
-
-    @NotNull
-    private List<ItemType> loadItems() {
-        List<ItemType> loadedItems = PersistenceProvider.makeInTransactionAndReturn(
-                (entityManager ->
-                        entityManager.createQuery("select i from market$ItemType i", ItemType.class).getResultList()
-                )
-        );
-        return loadedItems != null ? loadedItems : Collections.emptyList();
-    }
-
-    @Nullable
-    private User loadUser(final @NotNull String userId) {
-        List<User> users = PersistenceProvider.makeInTransactionAndReturn(
-                (entityManager ->
-                        entityManager.createQuery(
-                                "select u from market$User u join fetch u.items i where u.id = :userId", User.class)
-                                .setParameter("userId", userId)
-                                .setMaxResults(1)
-                                .getResultList()
-                ));
-        return users == null || users.isEmpty() ? null : users.get(0);
-    }
-
-    @Nullable
-    private ItemType loadItem(final @NotNull String itemId) {
-        List<ItemType> items = PersistenceProvider.makeInTransactionAndReturn(
-                (entityManager ->
-                        entityManager.createQuery(
-                                "select i from market$ItemType i join fetch i.users u where i.id = :itemId", ItemType.class)
-                                .setParameter("itemId", itemId)
-                                .setMaxResults(1)
-                                .getResultList()
-                ));
-        return items == null || items.isEmpty() ? null : items.get(0);
+    private void print(@NotNull final PrintWriter writer, @NotNull final String message) {
+        writer.write(message);
+        writer.flush();
     }
 }

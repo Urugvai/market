@@ -12,7 +12,8 @@ CREATE TABLE market_item_type (
     id VARCHAR(36) not null,
     name VARCHAR(128) not null,
     description TEXT,
-    price  NUMERIC not null,
+    price NUMERIC not null,
+    removed_from_selling BOOLEAN DEFAULT FALSE,
 
     PRIMARY KEY(id)
 );

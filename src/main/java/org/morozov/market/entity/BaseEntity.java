@@ -20,8 +20,8 @@ public abstract class BaseEntity implements Serializable {
         this.id = UUID.randomUUID().toString();
     }
 
-    public String getId() {
-        return id;
+    public UUID getId() {
+        return UUID.fromString(id);
     }
 
     @Override

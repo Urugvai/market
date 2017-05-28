@@ -3,8 +3,10 @@ package org.morozov.market.server;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.morozov.market.util.AppContext;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -23,9 +25,13 @@ public class ServerThread extends Thread {
 
     public void run() {
         try (final ServerSocket serverSocket = this.serverSocket) {
+            serverSocket.setSoTimeout(Integer.valueOf(AppContext.getProperty("serverTimeout")));
             while (!Thread.currentThread().isInterrupted()) {
-                Socket client = serverSocket.accept();
-                Server.getThreadPool().submit(new ClientThread(client));
+                try {
+                    Socket client = serverSocket.accept();
+                    Server.getThreadPool().submit(new ClientThread(client));
+                } catch (InterruptedIOException ignored) {
+                }
             }
         } catch (IOException e) {
             logger.error("Some troubles with server thread", e);
