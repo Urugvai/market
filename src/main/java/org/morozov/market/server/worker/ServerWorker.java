@@ -13,10 +13,7 @@ import org.morozov.market.util.DialogHolder;
 import org.morozov.market.util.PersistenceProvider;
 
 import javax.persistence.EntityManager;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
@@ -116,18 +113,26 @@ public class ServerWorker {
 
     @Nullable
     public static User loadUserInTransaction(
-            @NotNull final UUID userId, @Nullable final PrintWriter writer, @NotNull final EntityManager em) {
+            @NotNull final UUID userId, @Nullable final DataOutputStream writer, @NotNull final EntityManager em) {
         List<User> reloadedUsers = em.createQuery(
                 "select u from market$User u join fetch u.items i where u.id = :userId", User.class)
                 .setParameter("userId", userId.toString())
                 .setMaxResults(1)
                 .getResultList();
-        if ((reloadedUsers == null || reloadedUsers.isEmpty()) && writer != null) {
-            writer.write(DialogHolder.USER_WAS_DELETED);
-            writer.flush();
+        if (reloadedUsers == null || reloadedUsers.isEmpty()) {
+            if (writer != null)
+                print(writer, DialogHolder.USER_WAS_DELETED);
             return null;
         }
         return reloadedUsers.get(0);
     }
 
+    public static void print(@NotNull final DataOutputStream writer, @NotNull final String message) {
+        try {
+            writer.writeUTF(message);
+            writer.flush();
+        } catch (IOException e) {
+            logger.error(String.format("Error while write message '%s'", message), e);
+        }
+    }
 }

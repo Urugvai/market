@@ -15,11 +15,11 @@ public interface DialogHolder {
 
     String ITEM_ARE_NOT_FOUND = "Imputed item aren't found in the shop!\n\r";
 
+    String ITEM_ARE_NOT_FOUND_FOR_SELLING = "Imputed item aren't found for selling!\n\r";
+
     String NOT_ENOUGH_FUNDS = "Not enough funds for buying!\n\r";
 
     String SUCCESSFUL_OPERATION = "Successful operation!\n\r";
 
     String USER_WAS_DELETED = "User was deleted!\n\r";
-
-    String ITEM_WAS_DELETED = "Item was deleted!\n\r";
 }

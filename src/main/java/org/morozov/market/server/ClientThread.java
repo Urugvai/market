@@ -13,12 +13,13 @@ import org.morozov.market.util.DialogHolder;
 import org.morozov.market.util.PersistenceProvider;
 import org.morozov.market.util.StringUtils;
 
-import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.List;
+
+import static org.morozov.market.server.worker.ServerWorker.print;
 
 /**
  * Created by Morozov on 5/21/2017.
@@ -37,17 +38,16 @@ public class ClientThread extends Thread {
 
     public void run() {
         try (final Socket socket = this.socket;
-             final BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-             final PrintWriter writer = new PrintWriter(socket.getOutputStream())) {
+             final DataInputStream reader = new DataInputStream(socket.getInputStream());
+             final DataOutputStream writer = new DataOutputStream(socket.getOutputStream())) {
             while (!Thread.currentThread().isInterrupted()) {
                 print(writer, DialogHolder.WELCOME_SPEECH);
 
                 String login = "";
                 do {
-                    String command = reader.readLine();
+                    String command = reader.readUTF();
 
-                    String loginCommand = command.substring(command.indexOf("l"), command.length());
-                    String[] imputedCommand = loginCommand.split(" ");
+                    String[] imputedCommand = command.split(" ");
 
                     if (imputedCommand.length != 2
                             || !CommandHolder.LOGIN.equals(imputedCommand[0].toUpperCase())) {
@@ -63,21 +63,16 @@ public class ClientThread extends Thread {
                         break;
                     }
                 } while (!Thread.currentThread().isInterrupted());
-
                 User user = ServerWorker.loadOrCreateUser(login);
-
                 if (user == null) {
                     logger.warn("Can't connect user '%s'. Session is closed.", login);
                     return;
                 }
-
                 lastLogin = user.getLogin();
                 print(writer, DialogHolder.COMMAND_LIST);
-
                 boolean logout = false;
-
                 while (!Thread.currentThread().isInterrupted() && !logout) {
-                    String command = reader.readLine();
+                    String command = reader.readUTF();
 
                     String[] imputedCommand = command.split(" ");
 
@@ -166,7 +161,7 @@ public class ClientThread extends Thread {
                                     }
                                 }
                                 if (itemForSelling == null) {
-                                    print(writer, DialogHolder.ITEM_ARE_NOT_FOUND);
+                                    print(writer, DialogHolder.ITEM_ARE_NOT_FOUND_FOR_SELLING);
                                     return;
                                 }
                                 reloadedUser.setAccount(
@@ -179,7 +174,6 @@ public class ClientThread extends Thread {
                             break;
                         default:
                             print(writer, DialogHolder.UNKNOWN_COMMAND);
-                            print(writer, DialogHolder.COMMAND_LIST);
                             break;
                     }
                 }
@@ -203,10 +197,5 @@ public class ClientThread extends Thread {
         } else {
             return false;
         }
-    }
-
-    private void print(@NotNull final PrintWriter writer, @NotNull final String message) {
-        writer.write(message);
-        writer.flush();
     }
 }
